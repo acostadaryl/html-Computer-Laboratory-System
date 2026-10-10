@@ -1,0 +1,1247 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Computer Laboratory Management System</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Font Awesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            50: '#f0fdf4',
+                            100: '#dcfce7',
+                            600: '#16a34a',
+                            800: '#124828',
+                            900: '#0d381e',
+                            950: '#052312'
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif']
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        .custom-scrollbar::-webkit-scrollbar { width: 6px; height: 6px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: #f1f1f1; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #c1c1c1; border-radius: 3px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #a8a8a8; }
+        .glass-panel { background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(10px); }
+    </style>
+</head>
+<body class="bg-slate-100 text-slate-800 antialiased min-h-screen flex flex-col">
+
+    <div id="toast-container" class="fixed top-5 right-5 z-50 flex flex-col gap-2 max-w-xs w-full pointer-events-none"></div>
+
+    <!-- MAIN APP WRAPPER -->
+    <div id="app" class="flex-1 flex flex-col">
+        <!-- APP SCREEN CONTROLLER CONTAINER -->
+    </div>
+
+    <script>
+        const INITIAL_DATA = {
+            units: [
+                { id: "PC-001", lab: "Lab A, Station 1", model: "Dell OptiPlex 7080", cpu: "Core i7 10th", ram: "16GB DDR4", storage: "512GB SSD", gpu: "RTX 3060", status: "AVAILABLE" },
+                { id: "PC-002", lab: "Lab A, Station 2", model: "Dell OptiPlex 7080", cpu: "Core i7 10th", ram: "16GB DDR4", storage: "512GB SSD", gpu: "RTX 3060", status: "IN USE", currentUser: "John Doe" },
+                { id: "PC-003", lab: "Lab A, Station 3", model: "Dell OptiPlex 7080", cpu: "Core i7 10th", ram: "16GB DDR4", storage: "512GB SSD", gpu: "RTX 3060", status: "AVAILABLE" },
+                { id: "PC-004", lab: "Lab A, Station 4", model: "Dell OptiPlex 7080", cpu: "Core i7 10th", ram: "16GB DDR4", storage: "512GB SSD", gpu: "RTX 3060", status: "MAINTENANCE" },
+                { id: "PC-005", lab: "Lab A, Station 5", model: "HP EliteDesk 800", cpu: "Ryzen 7 5800X", ram: "32GB DDR4", storage: "1TB SSD", gpu: "GTX 1660 Ti", status: "IN USE", currentUser: "Sarah Smith" },
+                { id: "PC-006", lab: "Lab B, Station 1", model: "Dell Precision 3640", cpu: "Core i5-11th", ram: "8GB DDR4", storage: "256GB SSD", gpu: "Integrated", status: "AVAILABLE" },
+                { id: "PC-007", lab: "Lab B, Station 2", model: "Dell Precision 3640", cpu: "Core i5-11th", ram: "8GB DDR4", storage: "256GB SSD", gpu: "Integrated", status: "AVAILABLE" },
+                { id: "PC-008", lab: "Lab B, Station 3", model: "Dell Precision 3640", cpu: "Core i5-11th", ram: "8GB DDR4", storage: "256GB SSD", gpu: "Integrated", status: "IN USE", currentUser: "Mike Ross" },
+                { id: "PC-009", lab: "Lab B, Station 4", model: "Dell Precision 3640", cpu: "Core i5-11th", ram: "8GB DDR4", storage: "256GB SSD", gpu: "Integrated", status: "AVAILABLE" },
+                { id: "PC-010", lab: "Lab B, Station 5", model: "Dell Precision 3640", cpu: "Core i5-11th", ram: "8GB DDR4", storage: "256GB SSD", gpu: "Integrated", status: "MAINTENANCE" },
+                { id: "PC-012", lab: "Lab B, Station 12", model: "Dell Precision 3640", cpu: "Core i5-11th", ram: "8GB DDR4", storage: "256GB SSD", gpu: "Integrated", status: "MAINTENANCE" },
+                { id: "PC-024", lab: "Lab C, Station 4", model: "Asus ProArt Station", cpu: "Core i9-12th", ram: "64GB DDR5", storage: "2TB NVMe", gpu: "RTX 3080", status: "AVAILABLE" }
+            ],
+            users: [
+                { id: "CLI-2023-001", name: "Sarah Smith", role: "Client", email: "sarah.s@gmail.com", lastLogin: "10 mins ago", status: "ACTIVE" },
+                { id: "CLI-2023-042", name: "Dr. John Doe", role: "Client", email: "j.doe@gmail.com", lastLogin: "2 hours ago", status: "ACTIVE" },
+                { id: "ADM-2023-005", name: "Michael Chen", role: "Admin", email: "m.chen@gmail.com", lastLogin: "Yesterday", status: "ACTIVE" },
+                { id: "CLI-2023-088", name: "Mike Ross", role: "Client", email: "m.ross@gmail.com", lastLogin: "3 days ago", status: "INACTIVE" },
+                { id: "CLI-2023-102", name: "Emily Blunt", role: "Client", email: "e.blunt@gmail.com", lastLogin: "Never", status: "PENDING" }
+            ],
+            reports: [
+                { id: "REP-101", pcId: "PC-001", lab: "Lab A, Station 1", problem: "Keyboard - Severe keys not responding", status: "PENDING", date: "Oct 05, 2026", technician: "Unassigned" },
+                { id: "REP-102", pcId: "PC-005", lab: "Lab A, Station 5", problem: "Monitor - Display flickers intermittently", status: "IN PROGRESS", date: "Oct 05, 2026", technician: "Mark Santos" },
+                { id: "REP-103", pcId: "PC-012", lab: "Lab B, Station 12", problem: "Mouse - Replacement installed", status: "COMPLETED", date: "Oct 04, 2026", technician: "Ana Reyes" },
+                { id: "REP-104", pcId: "PC-008", lab: "Lab A, Station 8", problem: "System Unit - Computer will not power on", status: "PENDING", date: "Oct 04, 2026", technician: "Unassigned" },
+                { id: "REP-105", pcId: "PC-019", lab: "Lab B, Station 10", problem: "Network - No internet connection", status: "IN PROGRESS", date: "Oct 03, 2026", technician: "Jose Cruz" }
+            ],
+            currentScreen: 'welcome', // welcome, login, resetPassword, app
+            activeTab: 'dashboard', // dashboard, units, specs, availability, users, reports, settings
+            searchTerm: '',
+            filterLab: 'ALL',
+            filterStatus: 'ALL',
+            userAuth: {
+                isLoggedIn: false,
+                email: 'admin@gmail.com',
+                name: 'Admin Profile',
+                role: 'Super Administrator'
+            }
+        };
+
+        // Application Store
+        let state = { ...INITIAL_DATA };
+
+        function loadFromStorage() {
+            const savedData = localStorage.getItem('pcc_lab_system_data');
+            if (savedData) {
+                try {
+                    const parsed = JSON.parse(savedData);
+                    state.units = parsed.units || INITIAL_DATA.units;
+                    state.users = parsed.users || INITIAL_DATA.users;
+                    state.reports = parsed.reports || INITIAL_DATA.reports;
+                } catch (e) {
+                    console.error('Failed to parse localStorage data', e);
+                }
+            }
+        }
+
+        function saveToStorage() {
+            localStorage.setItem('pcc_lab_system_data', JSON.stringify({
+                units: state.units,
+                users: state.users,
+                reports: state.reports
+            }));
+        }
+
+        function showToast(message, type = 'success') {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            const bg = type === 'success' ? 'bg-emerald-800' : type === 'danger' ? 'bg-rose-800' : 'bg-slate-800';
+            toast.className = `pointer-events-auto ${bg} text-white px-4 py-3 rounded-xl shadow-lg border border-white/20 text-sm font-medium flex items-center justify-between gap-3 transform transition-all duration-300 translate-y-2 opacity-0`;
+            
+            let icon = 'fa-check-circle';
+            if (type === 'danger') icon = 'fa-exclamation-circle';
+            if (type === 'info') icon = 'fa-info-circle';
+
+            toast.innerHTML = `
+                <div class="flex items-center gap-2">
+                    <i class="fas ${icon}"></i>
+                    <span>${message}</span>
+                </div>
+                <button onclick="this.parentElement.remove()" class="text-white/60 hover:text-white"><i class="fas fa-times"></i></button>
+            `;
+            container.appendChild(toast);
+
+            setTimeout(() => {
+                toast.classList.remove('translate-y-2', 'opacity-0');
+            }, 10);
+
+            setTimeout(() => {
+                toast.classList.add('opacity-0');
+                setTimeout(() => toast.remove(), 300);
+            }, 3000);
+        }
+
+        function render() {
+            const app = document.getElementById('app');
+            
+            if (state.currentScreen === 'welcome') {
+                app.innerHTML = renderWelcomeScreen();
+            } else if (state.currentScreen === 'login') {
+                app.innerHTML = renderLoginScreen();
+            } else if (state.currentScreen === 'resetPassword') {
+                app.innerHTML = renderResetPasswordScreen();
+            } else {
+                app.innerHTML = renderMainDashboardLayout();
+                attachMainEvents();
+            }
+        }
+
+        function renderWelcomeScreen() {
+            return `
+                <div class="relative min-h-screen flex items-center justify-center bg-brand-900 overflow-hidden">
+                    <!-- Background Darkened Lab Wallpaper Overlay -->
+                    <div class="absolute inset-0 bg-cover bg-center opacity-25 scale-105 transition-transform duration-10000" style="background-image: url('https://images.unsplash.com/photo-1542751371-adc38448a05e?q=80&w=1600&auto=format&fit=crop');"></div>
+                    <div class="absolute inset-0 bg-gradient-to-t from-brand-950 via-brand-900/90 to-brand-900/70"></div>
+
+                    <!-- Header Branding -->
+                    <div class="absolute top-6 left-8 flex items-center gap-3">
+                        <div class="w-10 h-10 rounded-xl bg-white/10 backdrop-blur border border-white/20 flex items-center justify-center text-emerald-400 font-bold text-xl">
+                            <i class="fas fa-desktop"></i>
+                        </div>
+                        <span class="text-white font-semibold tracking-wider text-sm">COMPUTER LABORATORY SYSTEM</span>
+                    </div>
+
+                    <!-- Center Splash Box -->
+                    <div class="relative z-10 w-full max-w-md p-8 bg-brand-950/80 border border-brand-800/60 rounded-3xl backdrop-blur-xl text-center shadow-2xl">
+                        <div class="w-20 h-20 mx-auto mb-6 rounded-full bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center text-emerald-400 text-3xl shadow-inner">
+                            <i class="fas fa-microchip"></i>
+                        </div>
+                        <h2 class="text-xs uppercase tracking-widest text-emerald-400 font-semibold mb-1">Computer Laboratory System</h2>
+                        <p class="text-xs text-slate-400 mb-6">Computer Laboratory Management System</p>
+                        
+                        <h1 class="text-4xl font-extrabold text-white mb-2">Welcome!</h1>
+                        <p class="text-slate-300 text-sm mb-8">Click below to access the system.</p>
+
+                        <button onclick="navigateScreen('login')" class="group relative w-16 h-16 mx-auto rounded-full bg-emerald-500 hover:bg-emerald-400 text-brand-950 flex items-center justify-center shadow-lg shadow-emerald-500/30 transition-all duration-300 hover:scale-105 active:scale-95">
+                            <i class="fas fa-power-off text-2xl group-hover:rotate-12 transition-transform"></i>
+                        </button>
+                    </div>
+                </div>
+            `;
+        }
+
+        function renderLoginScreen() {
+            return `
+                <div class="relative min-h-screen flex items-center justify-center bg-brand-900 overflow-hidden">
+                    <div class="absolute inset-0 bg-cover bg-center opacity-20" style="background-image: url('https://images.unsplash.com/photo-1542751371-adc38448a05e?q=80&w=1600&auto=format&fit=crop');"></div>
+                    <div class="absolute inset-0 bg-gradient-to-tr from-brand-950 via-brand-900/90 to-brand-900/80"></div>
+
+                    <div class="relative z-10 w-full max-w-4xl grid md:grid-cols-2 bg-slate-900/40 border border-white/10 rounded-3xl overflow-hidden shadow-2xl backdrop-blur-xl m-4">
+                        <!-- Left Hero Side -->
+                        <div class="p-8 md:p-10 bg-brand-950/80 border-r border-white/5 flex flex-col justify-between">
+                            <div class="flex items-center gap-3">
+                                <div class="w-9 h-9 rounded-lg bg-emerald-500/20 border border-emerald-500/40 flex items-center justify-center text-emerald-400 font-bold">
+                                    <i class="fas fa-server"></i>
+                                </div>
+                                <span class="text-white font-medium text-sm">COMPUTER LABORATORY SYSTEM</span>
+                            </div>
+
+                            <div class="my-10">
+                                <span class="inline-block px-3 py-1 bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-semibold rounded-full mb-4">LABORATORY OPERATIONS</span>
+                                <h1 class="text-3xl md:text-4xl font-extrabold text-white leading-tight mb-4">Manage every lab with clarity.</h1>
+                                <p class="text-slate-400 text-sm leading-relaxed mb-6">Monitor computer availability, maintenance, and users from one dependable workspace.</p>
+                                
+                                <ul class="space-y-2 text-xs text-slate-300">
+                                    <li class="flex items-center gap-2"><i class="fas fa-check-circle text-emerald-400"></i> Real-time equipment oversight</li>
+                                    <li class="flex items-center gap-2"><i class="fas fa-check-circle text-emerald-400"></i> Centralized maintenance records</li>
+                                </ul>
+                            </div>
+
+                            <div class="text-xs text-slate-500">
+                                Computer Laboratory System &bull; &copy; 2026
+                            </div>
+                        </div>
+
+                        <!-- Right Login Form -->
+                        <div class="p-8 md:p-10 bg-white flex flex-col justify-center">
+                            <div class="mb-6">
+                                <span class="text-xs font-bold uppercase tracking-wider text-emerald-600">Welcome Back</span>
+                                <h2 class="text-2xl font-bold text-slate-900 mt-1">Log in to your account</h2>
+                                <p class="text-xs text-slate-500 mt-1">Enter your details to continue where you left off.</p>
+                            </div>
+
+                            <form onsubmit="handleLogin(event)" class="space-y-4">
+                                <div>
+                                    <label class="block text-xs font-semibold text-slate-700 mb-1">Email address</label>
+                                    <div class="relative">
+                                        <i class="fas fa-envelope absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs"></i>
+                                        <input type="email" id="loginEmail" required value="admin@pcc.edu.ph" class="w-full pl-9 pr-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:bg-white focus:border-brand-800 focus:outline-none transition">
+                                    </div>
+                                </div>
+
+                                <div>
+                                    <label class="block text-xs font-semibold text-slate-700 mb-1">Password</label>
+                                    <div class="relative">
+                                        <i class="fas fa-lock absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs"></i>
+                                        <input type="password" id="loginPassword" required value="password123" class="w-full pl-9 pr-9 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:bg-white focus:border-brand-800 focus:outline-none transition">
+                                        <button type="button" onclick="togglePasswordVisibility()" class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 text-xs">
+                                            <i class="fas fa-eye" id="passwordToggleIcon"></i>
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <div class="flex items-center justify-between text-xs">
+                                    <label class="flex items-center gap-2 text-slate-600 cursor-pointer">
+                                        <input type="checkbox" checked class="rounded border-slate-300 text-brand-800 focus:ring-brand-800">
+                                        Remember me
+                                    </label>
+                                    <button type="button" onclick="navigateScreen('resetPassword')" class="text-emerald-700 hover:underline font-medium">Forgot password?</button>
+                                </div>
+
+                                <button type="submit" class="w-full py-3 bg-brand-800 hover:bg-brand-900 text-white rounded-xl text-sm font-semibold shadow-md shadow-brand-900/20 transition-all flex items-center justify-center gap-2">
+                                    <span>Log in</span>
+                                    <i class="fas fa-arrow-right text-xs"></i>
+                                </button>
+
+                                <div class="text-center pt-2">
+                                    <span class="text-[11px] text-slate-400"><i class="fas fa-shield-alt text-emerald-600"></i> Protected Administrator Access</span>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function renderResetPasswordScreen() {
+            return `
+                <div class="relative min-h-screen flex items-center justify-center bg-brand-900 overflow-hidden">
+                    <div class="absolute inset-0 bg-cover bg-center opacity-20" style="background-image: url('https://images.unsplash.com/photo-1542751371-adc38448a05e?q=80&w=1600&auto=format&fit=crop');"></div>
+                    <div class="absolute inset-0 bg-gradient-to-tr from-brand-950 via-brand-900/90 to-brand-900/80"></div>
+
+                    <div class="relative z-10 w-full max-w-4xl grid md:grid-cols-2 bg-slate-900/40 border border-white/10 rounded-3xl overflow-hidden shadow-2xl backdrop-blur-xl m-4">
+                        <div class="p-8 md:p-10 bg-brand-950/80 border-r border-white/5 flex flex-col justify-between">
+                            <div class="flex items-center gap-3">
+                                <div class="w-9 h-9 rounded-lg bg-emerald-500/20 border border-emerald-500/40 flex items-center justify-center text-emerald-400 font-bold">
+                                    <i class="fas fa-key"></i>
+                                </div>
+                                <span class="text-white font-medium text-sm">COMPUTER LABORATORY SYSTEM</span>
+                            </div>
+
+                            <div class="my-10">
+                                <span class="inline-block px-3 py-1 bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-semibold rounded-full mb-4">LABORATORY OPERATIONS</span>
+                                <h1 class="text-3xl font-extrabold text-white leading-tight mb-4">Secure access, restored simply.</h1>
+                                <p class="text-slate-400 text-sm leading-relaxed mb-6">We'll help you return to your laboratory workspace quickly and securely.</p>
+                            </div>
+
+                            <div class="text-xs text-slate-500">
+                                PASIG CATHOLIC COLLEGE &bull; &copy; 2026
+                            </div>
+                        </div>
+
+                        <div class="p-8 md:p-10 bg-white flex flex-col justify-center">
+                            <div class="mb-6">
+                                <div class="w-10 h-10 rounded-xl bg-emerald-100 text-emerald-700 flex items-center justify-center text-lg mb-3">
+                                    <i class="fas fa-key"></i>
+                                </div>
+                                <h2 class="text-2xl font-bold text-slate-900">Reset your password</h2>
+                                <p class="text-xs text-slate-500 mt-1">A few details and you'll be back in your account.</p>
+                            </div>
+
+                            <div class="p-3 bg-emerald-50 border border-emerald-100 rounded-xl text-xs text-emerald-800 mb-4 flex items-center gap-2">
+                                <i class="fas fa-info-circle"></i>
+                                <span>Enter the email linked to your administrator account. We'll send a secure reset link.</span>
+                            </div>
+
+                            <form onsubmit="handleResetPassword(event)" class="space-y-4">
+                                <div>
+                                    <label class="block text-xs font-semibold text-slate-700 mb-1">Administrator Email</label>
+                                    <input type="email" id="resetEmail" required value="admin@pcc.edu.ph" class="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:bg-white focus:border-brand-800 focus:outline-none transition">
+                                </div>
+
+                                <button type="submit" class="w-full py-3 bg-brand-800 hover:bg-brand-900 text-white rounded-xl text-sm font-semibold shadow-md transition">
+                                    Send Reset Link
+                                </button>
+
+                                <div class="text-center pt-2">
+                                    <button type="button" onclick="navigateScreen('login')" class="text-xs text-slate-600 hover:text-slate-900 font-medium">
+                                        <i class="fas fa-arrow-left mr-1"></i> Back to Sign In
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function renderMainDashboardLayout() {
+            return `
+                <div class="flex h-screen overflow-hidden bg-slate-100">
+                    <!-- SIDEBAR -->
+                    <aside class="w-64 bg-gradient-to-b from-brand-900 via-brand-900 to-brand-950 text-slate-200 flex flex-col flex-shrink-0 border-r border-brand-800 shadow-xl">
+                        <!-- Brand Header -->
+                        <div class="p-5 flex items-center gap-3 border-b border-white/10">
+                            <div class="w-10 h-10 rounded-xl bg-emerald-500/20 border border-emerald-400/30 flex items-center justify-center text-emerald-400 text-xl font-bold shadow-inner">
+                                <i class="fas fa-desktop"></i>
+                            </div>
+                            <div>
+                                <h1 class="text-xs font-bold tracking-wider text-white uppercase">Computer System</h1>
+                                <p class="text-[10px] text-emerald-400 font-medium tracking-wide">ADMIN PANEL</p>
+                            </div>
+                        </div>
+
+                        <!-- Navigation Items -->
+                        <nav class="flex-1 px-3 py-4 space-y-1 overflow-y-auto custom-scrollbar">
+                            ${renderNavItem('dashboard', 'fas fa-th-large', 'Dashboard')}
+                            ${renderNavItem('units', 'fas fa-desktop', 'Computer Units')}
+                            ${renderNavItem('specs', 'fas fa-microchip', 'Specifications')}
+                            ${renderNavItem('availability', 'fas fa-signal', 'Availability')}
+                            ${renderNavItem('users', 'fas fa-users', 'User Management')}
+                            ${renderNavItem('reports', 'fas fa-wrench', 'Maintenance Report')}
+                            ${renderNavItem('settings', 'fas fa-cog', 'Settings')}
+                        </nav>
+
+                        <!-- Logout Footer -->
+                        <div class="p-4 border-t border-white/10">
+                            <button onclick="handleLogout()" class="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl border border-rose-500/30 bg-rose-500/10 hover:bg-rose-500/20 text-rose-300 text-xs font-medium transition">
+                                <i class="fas fa-sign-out-alt"></i>
+                                <span>Log-out</span>
+                            </button>
+                        </div>
+                    </aside>
+
+                    <!-- MAIN CONTENT AREA -->
+                    <div class="flex-1 flex flex-col h-full overflow-hidden">
+                        <!-- TOP HEADER BAR -->
+                        <header class="h-16 bg-white border-b border-slate-200 flex items-center justify-between px-6 z-10">
+                            <div class="flex items-center gap-4">
+                                <h2 class="text-sm font-bold text-slate-800 tracking-tight uppercase">Computer Laboratory Management System</h2>
+                            </div>
+
+                            <div class="flex items-center gap-4">
+                                <div class="flex items-center gap-3 pl-4 border-l border-slate-200">
+                                    <div class="w-9 h-9 rounded-full bg-slate-100 border border-slate-300 flex items-center justify-center text-slate-600 font-semibold text-xs">
+                                        AP
+                                    </div>
+                                    <div class="text-left hidden sm:block">
+                                        <p class="text-xs font-bold text-slate-800 leading-none">${state.userAuth.name}</p>
+                                        <p class="text-[10px] text-slate-400 mt-0.5">${state.userAuth.role}</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </header>
+
+                        <!-- TAB CONTENT AREA -->
+                        <main class="flex-1 overflow-y-auto p-6 bg-slate-100 custom-scrollbar">
+                            ${renderActiveTabContent()}
+                        </main>
+                    </div>
+                </div>
+
+                <!-- DYNAMIC MODAL CONTAINER -->
+                <div id="modal-container"></div>
+            `;
+        }
+
+        function renderNavItem(tabId, icon, label) {
+            const isActive = state.activeTab === tabId;
+            const activeClasses = isActive 
+                ? 'bg-emerald-600/30 text-white font-semibold border-l-4 border-emerald-400 pl-3' 
+                : 'text-slate-300 hover:bg-white/5 hover:text-white';
+            
+            return `
+                <button onclick="switchTab('${tabId}')" class="w-full flex items-center gap-3 px-3 py-3 rounded-xl text-xs transition-all ${activeClasses}">
+                    <i class="${icon} text-sm w-5 text-center"></i>
+                    <span>${label}</span>
+                </button>
+            `;
+        }
+
+        function renderActiveTabContent() {
+            switch(state.activeTab) {
+                case 'dashboard': return renderDashboardView();
+                case 'units': return renderUnitsView();
+                case 'specs': return renderSpecsView();
+                case 'availability': return renderAvailabilityView();
+                case 'users': return renderUsersView();
+                case 'reports': return renderReportsView();
+                case 'settings': return renderSettingsView();
+                default: return renderDashboardView();
+            }
+        }
+
+        // --- DASHBOARD VIEW ---
+        function renderDashboardView() {
+            const totalUnits = state.units.length;
+            const availableUnits = state.units.filter(u => u.status === 'AVAILABLE').length;
+            const maintenanceUnits = state.units.filter(u => u.status === 'MAINTENANCE').length;
+            const inUseUnits = state.units.filter(u => u.status === 'IN USE').length;
+
+            return `
+                <div class="space-y-6 max-w-7xl mx-auto">
+                    <div>
+                        <h1 class="text-2xl font-bold text-slate-900">Dashboard</h1>
+                        <p class="text-xs text-slate-500">Welcome, Administrator. Here's today's laboratory snapshot.</p>
+                    </div>
+
+                    <!-- KPI CARDS -->
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-5">
+                        <div class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm flex items-center justify-between">
+                            <div>
+                                <p class="text-xs font-semibold text-slate-400 uppercase tracking-wider">TOTAL UNITS</p>
+                                <h3 class="text-3xl font-extrabold text-slate-800 mt-1">${totalUnits}</h3>
+                            </div>
+                            <div class="w-12 h-12 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center text-xl">
+                                <i class="fas fa-desktop"></i>
+                            </div>
+                        </div>
+
+                        <div class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm flex items-center justify-between">
+                            <div>
+                                <p class="text-xs font-semibold text-slate-400 uppercase tracking-wider">AVAILABLE UNITS</p>
+                                <h3 class="text-3xl font-extrabold text-emerald-600 mt-1">${availableUnits}</h3>
+                            </div>
+                            <div class="w-12 h-12 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center text-xl">
+                                <i class="fas fa-check-circle"></i>
+                            </div>
+                        </div>
+
+                        <div class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm flex items-center justify-between">
+                            <div>
+                                <p class="text-xs font-semibold text-slate-400 uppercase tracking-wider">UNDER MAINTENANCE</p>
+                                <h3 class="text-3xl font-extrabold text-amber-500 mt-1">${maintenanceUnits}</h3>
+                            </div>
+                            <div class="w-12 h-12 rounded-2xl bg-amber-50 text-amber-600 flex items-center justify-center text-xl">
+                                <i class="fas fa-wrench"></i>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- RECENT MAINTENANCE REPORTS TABLE -->
+                    <div class="bg-white rounded-2xl border border-slate-200/80 shadow-sm p-5">
+                        <div class="flex items-center justify-between mb-4">
+                            <h3 class="text-sm font-bold text-slate-800">Recent Maintenance Reports</h3>
+                            <button onclick="switchTab('reports')" class="text-xs font-semibold text-emerald-700 hover:underline">View All Reports</button>
+                        </div>
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left border-collapse">
+                                <thead>
+                                    <tr class="border-b border-slate-100 text-[11px] font-bold uppercase text-slate-400">
+                                        <th class="py-3 px-3">COMPUTER ID</th>
+                                        <th class="py-3 px-3">PROBLEM</th>
+                                        <th class="py-3 px-3">STATUS</th>
+                                        <th class="py-3 px-3 text-right">ACTION</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y divide-slate-100 text-xs">
+                                    ${state.reports.slice(0, 3).map(r => `
+                                        <tr>
+                                            <td class="py-3 px-3 font-semibold text-slate-800">${r.pcId}<br><span class="text-[10px] text-slate-400 font-normal">${r.lab}</span></td>
+                                            <td class="py-3 px-3 text-slate-600">${r.problem}</td>
+                                            <td class="py-3 px-3">${renderStatusBadge(r.status)}</td>
+                                            <td class="py-3 px-3 text-right">
+                                                <button onclick="switchTab('reports')" class="text-slate-400 hover:text-slate-600"><i class="fas fa-ellipsis-v"></i></button>
+                                            </td>
+                                        </tr>
+                                    `).join('')}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- CHARTS PLACEHOLDERS -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                        <div class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm flex flex-col items-center justify-center min-h-[180px] text-center">
+                            <i class="fas fa-chart-pie text-3xl text-slate-300 mb-2"></i>
+                            <p class="text-xs font-semibold text-slate-600">System Utilization Overview Chart</p>
+                            <p class="text-[11px] text-slate-400">Lab Capacity: ${((inUseUnits/totalUnits)*100).toFixed(0)}% Occupied</p>
+                        </div>
+                        <div class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm flex flex-col items-center justify-center min-h-[180px] text-center">
+                            <i class="fas fa-history text-3xl text-slate-300 mb-2"></i>
+                            <p class="text-xs font-semibold text-slate-600">Recent Activity Log</p>
+                            <p class="text-[11px] text-slate-400">Live monitoring active</p>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function renderUnitsView() {
+            let filteredUnits = state.units;
+            if (state.searchTerm) {
+                const term = state.searchTerm.toLowerCase();
+                filteredUnits = filteredUnits.filter(u => u.id.toLowerCase().includes(term) || u.model.toLowerCase().includes(term) || u.lab.toLowerCase().includes(term));
+            }
+
+            return `
+                <div class="space-y-6 max-w-7xl mx-auto">
+                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                        <div>
+                            <h1 class="text-2xl font-bold text-slate-900">Computer Units</h1>
+                            <p class="text-xs text-slate-500">Manage and monitor all workstation hardware</p>
+                        </div>
+
+                        <div class="flex items-center gap-3">
+                            <div class="relative">
+                                <i class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs"></i>
+                                <input type="text" oninput="handleSearch(this.value)" value="${state.searchTerm}" placeholder="Search Unit ID or Model..." class="pl-9 pr-3 py-2 bg-white border border-slate-200 rounded-xl text-xs focus:outline-none focus:border-brand-800 w-60">
+                            </div>
+                            <button onclick="openUnitModal()" class="px-4 py-2 bg-brand-800 hover:bg-brand-900 text-white rounded-xl text-xs font-semibold shadow flex items-center gap-2">
+                                <i class="fas fa-plus"></i> Add New Unit
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- UNITS TABLE -->
+                    <div class="bg-white rounded-2xl border border-slate-200/80 shadow-sm overflow-hidden">
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left border-collapse">
+                                <thead>
+                                    <tr class="bg-slate-50 border-b border-slate-200 text-[11px] font-bold uppercase text-slate-500">
+                                        <th class="py-3 px-4">UNIT ID</th>
+                                        <th class="py-3 px-4">MODEL / LAB</th>
+                                        <th class="py-3 px-4">SPECIFICATIONS</th>
+                                        <th class="py-3 px-4">STATUS</th>
+                                        <th class="py-3 px-4 text-right">ACTIONS</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y divide-slate-100 text-xs">
+                                    ${filteredUnits.length === 0 ? `
+                                        <tr><td colspan="5" class="py-8 text-center text-slate-400">No computer units found matching criteria.</td></tr>
+                                    ` : filteredUnits.map(u => `
+                                        <tr class="hover:bg-slate-50/80 transition">
+                                            <td class="py-3.5 px-4 font-bold text-slate-800">${u.id}</td>
+                                            <td class="py-3.5 px-4">
+                                                <div class="font-semibold text-slate-800">${u.model}</div>
+                                                <div class="text-[11px] text-slate-400">${u.lab}</div>
+                                            </td>
+                                            <td class="py-3.5 px-4 text-slate-600">
+                                                <div class="flex flex-wrap gap-x-3 gap-y-1 text-[11px]">
+                                                    <span><i class="fas fa-microchip text-slate-400 mr-1"></i>${u.cpu}</span>
+                                                    <span><i class="fas fa-memory text-slate-400 mr-1"></i>${u.ram}</span>
+                                                    <span><i class="fas fa-hdd text-slate-400 mr-1"></i>${u.storage}</span>
+                                                    <span><i class="fas fa-tv text-slate-400 mr-1"></i>${u.gpu}</span>
+                                                </div>
+                                            </td>
+                                            <td class="py-3.5 px-4">${renderStatusBadge(u.status)}</td>
+                                            <td class="py-3.5 px-4 text-right space-x-2">
+                                                <button onclick="openUnitModal('${u.id}')" class="text-emerald-700 hover:text-emerald-900 font-medium text-xs">Edit</button>
+                                                <button onclick="deleteUnit('${u.id}')" class="text-rose-600 hover:text-rose-800 font-medium text-xs">Delete</button>
+                                            </td>
+                                        </tr>
+                                    `).join('')}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        // --- SPECIFICATIONS VIEW ---
+        function renderSpecsView() {
+            return `
+                <div class="space-y-6 max-w-7xl mx-auto">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <h1 class="text-2xl font-bold text-slate-900">Specifications</h1>
+                            <p class="text-xs text-slate-500">Review the current build specs and system hardware matrix.</p>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <button onclick="showToast('Exporting hardware specs...', 'info')" class="px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs font-semibold text-slate-700 hover:bg-slate-50">
+                                <i class="fas fa-download mr-1"></i> Export
+                            </button>
+                            <button class="px-3 py-2 bg-slate-900 text-white rounded-xl text-xs font-semibold">Compare build</button>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                        <div class="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-sm">
+                            <i class="fas fa-microchip text-emerald-600 text-xl mb-2"></i>
+                            <p class="text-[10px] uppercase font-bold text-slate-400">Processor</p>
+                            <h4 class="text-sm font-bold text-slate-800">Apple M2 Pro / Core i9</h4>
+                            <p class="text-[11px] text-slate-500 mt-1">High performance multi-thread CPU</p>
+                        </div>
+                        <div class="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-sm">
+                            <i class="fas fa-memory text-emerald-600 text-xl mb-2"></i>
+                            <p class="text-[10px] uppercase font-bold text-slate-400">Memory</p>
+                            <h4 class="text-sm font-bold text-slate-800">24 GB - 64 GB Unified</h4>
+                            <p class="text-[11px] text-slate-500 mt-1">High bandwidth DDR5</p>
+                        </div>
+                        <div class="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-sm">
+                            <i class="fas fa-tv text-emerald-600 text-xl mb-2"></i>
+                            <p class="text-[10px] uppercase font-bold text-slate-400">Display</p>
+                            <h4 class="text-sm font-bold text-slate-800">14.2-inch Liquid Retina XDR</h4>
+                            <p class="text-[11px] text-slate-500 mt-1">120Hz refresh rate</p>
+                        </div>
+                        <div class="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-sm">
+                            <i class="fas fa-hdd text-emerald-600 text-xl mb-2"></i>
+                            <p class="text-[10px] uppercase font-bold text-slate-400">Storage</p>
+                            <h4 class="text-sm font-bold text-slate-800">1 TB - 2 TB NVMe SSD</h4>
+                            <p class="text-[11px] text-slate-500 mt-1">High speed read/write</p>
+                        </div>
+                    </div>
+
+                    <!-- MATRIX TABLE -->
+                    <div class="bg-white rounded-2xl border border-slate-200/80 shadow-sm p-5">
+                        <h3 class="text-sm font-bold text-slate-800 mb-4">Detailed Specifications Table</h3>
+                        <table class="w-full text-left text-xs">
+                            <tbody class="divide-y divide-slate-100">
+                                <tr><td class="py-2.5 font-semibold text-slate-500">Category</td><td class="py-2.5 font-bold text-slate-800">Value</td></tr>
+                                <tr><td class="py-2.5 text-slate-500">Processor</td><td class="py-2.5 text-slate-800">Intel Core i7 10th Gen / Apple M2 Pro</td></tr>
+                                <tr><td class="py-2.5 text-slate-500">Graphics</td><td class="py-2.5 text-slate-800">NVIDIA GeForce RTX 3060 12GB</td></tr>
+                                <tr><td class="py-2.5 text-slate-500">RAM Memory</td><td class="py-2.5 text-slate-800">16 GB DDR4 Dual Channel</td></tr>
+                                <tr><td class="py-2.5 text-slate-500">Operating System</td><td class="py-2.5 text-slate-800">Windows 11 Enterprise / macOS Ventura</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            `;
+        }
+
+        // --- REAL-TIME AVAILABILITY GRID VIEW ---
+        function renderAvailabilityView() {
+            return `
+                <div class="space-y-6 max-w-7xl mx-auto">
+                    <div>
+                        <h1 class="text-2xl font-bold text-slate-900">Real-time Availability</h1>
+                        <p class="text-xs text-slate-500">Live monitor of workstation occupancy and health status</p>
+                    </div>
+
+                    <!-- CARDS GRID -->
+                    <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+                        ${state.units.map(u => `
+                            <div class="bg-white border border-slate-200 rounded-2xl p-4 shadow-sm hover:shadow-md transition flex flex-col justify-between">
+                                <div>
+                                    <div class="flex items-center justify-between mb-2">
+                                        <span class="font-extrabold text-slate-800 text-sm">${u.id}</span>
+                                        ${renderStatusBadge(u.status)}
+                                    </div>
+                                    <p class="text-[10px] text-slate-400 font-medium">${u.lab}</p>
+                                </div>
+
+                                <div class="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between">
+                                    <span class="text-[11px] text-slate-500 font-medium truncate max-w-[90px]">
+                                        ${u.currentUser ? `<i class="fas fa-user text-slate-400 mr-1"></i>${u.currentUser}` : 'No active user'}
+                                    </span>
+                                    <button onclick="toggleUnitStatus('${u.id}')" title="Quick toggle status" class="text-slate-400 hover:text-brand-800 text-xs">
+                                        <i class="fas fa-sync-alt"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+            `;
+        }
+
+        function renderUsersView() {
+            return `
+                <div class="space-y-6 max-w-7xl mx-auto">
+                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                        <div>
+                            <h1 class="text-2xl font-bold text-slate-900">User Management</h1>
+                            <p class="text-xs text-slate-500">Manage students, faculty, and administrative access</p>
+                        </div>
+
+                        <div class="flex items-center gap-2">
+                            <button onclick="openUserModal()" class="px-4 py-2 bg-brand-800 hover:bg-brand-900 text-white rounded-xl text-xs font-semibold shadow flex items-center gap-2">
+                                <i class="fas fa-user-plus"></i> Add User
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- USER STATS -->
+                    <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                        <div class="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-sm">
+                            <p class="text-[10px] uppercase font-bold text-slate-400">TOTAL USERS</p>
+                            <h3 class="text-2xl font-bold text-slate-800 mt-1">${state.users.length}</h3>
+                        </div>
+                        <div class="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-sm">
+                            <p class="text-[10px] uppercase font-bold text-slate-400">ACTIVE NOW</p>
+                            <h3 class="text-2xl font-bold text-emerald-600 mt-1">${state.users.filter(u => u.status === 'ACTIVE').length}</h3>
+                        </div>
+                        <div class="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-sm">
+                            <p class="text-[10px] uppercase font-bold text-slate-400">STUDENTS</p>
+                            <h3 class="text-2xl font-bold text-slate-800 mt-1">${state.users.filter(u => u.role === 'Student').length}</h3>
+                        </div>
+                        <div class="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-sm">
+                            <p class="text-[10px] uppercase font-bold text-slate-400">PENDING</p>
+                            <h3 class="text-2xl font-bold text-amber-500 mt-1">${state.users.filter(u => u.status === 'PENDING').length}</h3>
+                        </div>
+                    </div>
+
+                    <!-- USERS TABLE -->
+                    <div class="bg-white rounded-2xl border border-slate-200/80 shadow-sm overflow-hidden">
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left border-collapse">
+                                <thead>
+                                    <tr class="bg-slate-50 border-b border-slate-200 text-[11px] font-bold uppercase text-slate-500">
+                                        <th class="py-3 px-4">USER ID</th>
+                                        <th class="py-3 px-4">FULL NAME</th>
+                                        <th class="py-3 px-4">ROLE</th>
+                                        <th class="py-3 px-4">EMAIL ADDRESS</th>
+                                        <th class="py-3 px-4">STATUS</th>
+                                        <th class="py-3 px-4 text-right">ACTIONS</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y divide-slate-100 text-xs">
+                                    ${state.users.map(u => `
+                                        <tr class="hover:bg-slate-50/80 transition">
+                                            <td class="py-3.5 px-4 font-semibold text-slate-700">${u.id}</td>
+                                            <td class="py-3.5 px-4 font-bold text-slate-900">${u.name}</td>
+                                            <td class="py-3.5 px-4"><span class="px-2 py-0.5 rounded-md bg-slate-100 text-slate-700 font-medium text-[11px]">${u.role}</span></td>
+                                            <td class="py-3.5 px-4 text-slate-600">${u.email}</td>
+                                            <td class="py-3.5 px-4">${renderStatusBadge(u.status)}</td>
+                                            <td class="py-3.5 px-4 text-right space-x-2">
+                                                <button onclick="openUserModal('${u.id}')" class="text-emerald-700 hover:text-emerald-900 font-medium">Edit</button>
+                                                <button onclick="deleteUser('${u.id}')" class="text-rose-600 hover:text-rose-800 font-medium">Delete</button>
+                                            </td>
+                                        </tr>
+                                    `).join('')}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function renderReportsView() {
+            return `
+                <div class="space-y-6 max-w-7xl mx-auto">
+                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                        <div>
+                            <h1 class="text-2xl font-bold text-slate-900">Maintenance Reports</h1>
+                            <p class="text-xs text-slate-500">Review, track, and manage laboratory computer issues</p>
+                        </div>
+
+                        <button onclick="openReportModal()" class="px-4 py-2 bg-brand-800 hover:bg-brand-900 text-white rounded-xl text-xs font-semibold shadow flex items-center gap-2">
+                            <i class="fas fa-plus"></i> New Report
+                        </button>
+                    </div>
+
+                    <!-- REPORTS TABLE -->
+                    <div class="bg-white rounded-2xl border border-slate-200/80 shadow-sm overflow-hidden">
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left border-collapse">
+                                <thead>
+                                    <tr class="bg-slate-50 border-b border-slate-200 text-[11px] font-bold uppercase text-slate-500">
+                                        <th class="py-3 px-4">REPORT ID / COMPUTER</th>
+                                        <th class="py-3 px-4">PROBLEM DESCRIPTION</th>
+                                        <th class="py-3 px-4">STATUS</th>
+                                        <th class="py-3 px-4">DATE REPORTED</th>
+                                        <th class="py-3 px-4">TECHNICIAN</th>
+                                        <th class="py-3 px-4 text-right">ACTIONS</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y divide-slate-100 text-xs">
+                                    ${state.reports.map(r => `
+                                        <tr class="hover:bg-slate-50/80 transition">
+                                            <td class="py-3.5 px-4 font-bold text-slate-900">${r.pcId}<br><span class="text-[10px] text-slate-400 font-normal">${r.id}</span></td>
+                                            <td class="py-3.5 px-4 text-slate-700 max-w-xs">${r.problem}</td>
+                                            <td class="py-3.5 px-4">${renderStatusBadge(r.status)}</td>
+                                            <td class="py-3.5 px-4 text-slate-500">${r.date}</td>
+                                            <td class="py-3.5 px-4 font-medium text-slate-700">${r.technician}</td>
+                                            <td class="py-3.5 px-4 text-right space-x-2">
+                                                <button onclick="openReportModal('${r.id}')" class="text-emerald-700 hover:text-emerald-900 font-medium">Edit</button>
+                                                <button onclick="deleteReport('${r.id}')" class="text-rose-600 hover:text-rose-800 font-medium">Delete</button>
+                                            </td>
+                                        </tr>
+                                    `).join('')}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function renderSettingsView() {
+            return `
+                <div class="space-y-6 max-w-4xl mx-auto">
+                    <div>
+                        <h1 class="text-2xl font-bold text-slate-900">Settings</h1>
+                        <p class="text-xs text-slate-500">System configuration and preferences</p>
+                    </div>
+
+                    <div class="bg-white rounded-2xl border border-slate-200/80 shadow-sm p-6 space-y-4">
+                        <h3 class="text-sm font-bold text-slate-800">System Data Persistence</h3>
+                        <p class="text-xs text-slate-500">Reset computer units, users, and reports back to initial Figma mockup defaults.</p>
+                        
+                        <button onclick="resetDataToDefault()" class="px-4 py-2 bg-rose-600 hover:bg-rose-700 text-white rounded-xl text-xs font-semibold shadow">
+                            Reset System Data
+                        </button>
+                    </div>
+                </div>
+            `;
+        }
+
+        // --- HELPER COMPONENT: BADGES ---
+        function renderStatusBadge(status) {
+            let colors = 'bg-slate-100 text-slate-600';
+            let icon = 'fa-circle';
+
+            switch(status) {
+                case 'AVAILABLE':
+                case 'COMPLETED':
+                case 'ACTIVE':
+                    colors = 'bg-emerald-100 text-emerald-800 border-emerald-200';
+                    break;
+                case 'IN USE':
+                case 'IN PROGRESS':
+                    colors = 'bg-sky-100 text-sky-800 border-sky-200';
+                    break;
+                case 'MAINTENANCE':
+                case 'PENDING':
+                    colors = 'bg-amber-100 text-amber-800 border-amber-200';
+                    break;
+                case 'INACTIVE':
+                    colors = 'bg-rose-100 text-rose-800 border-rose-200';
+                    break;
+            }
+
+            return `
+                <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold border ${colors}">
+                    <span class="w-1.5 h-1.5 rounded-full bg-current"></span>
+                    ${status}
+                </span>
+            `;
+        }
+
+        function openUnitModal(unitId = null) {
+            const isEdit = !!unitId;
+            const unit = isEdit ? state.units.find(u => u.id === unitId) : { id: `PC-0${state.units.length + 1}`, lab: 'Lab A, Station 1', model: 'Dell OptiPlex 7080', cpu: 'Core i7 10th', ram: '16GB DDR4', storage: '512GB SSD', gpu: 'RTX 3060', status: 'AVAILABLE' };
+
+            const modalHtml = `
+                <div class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm">
+                    <div class="bg-white rounded-3xl max-w-lg w-full p-6 shadow-2xl border border-slate-200">
+                        <div class="flex items-center justify-between border-b border-slate-100 pb-4 mb-4">
+                            <h3 class="text-base font-bold text-slate-800">${isEdit ? 'Edit Workstation' : 'Add New Computer Unit'}</h3>
+                            <button onclick="closeModal()" class="text-slate-400 hover:text-slate-600"><i class="fas fa-times"></i></button>
+                        </div>
+
+                        <form onsubmit="handleSaveUnit(event, '${isEdit ? unit.id : ''}')" class="space-y-3">
+                            <div class="grid grid-cols-2 gap-3">
+                                <div>
+                                    <label class="block text-[11px] font-bold text-slate-600 mb-1">Unit ID</label>
+                                    <input type="text" id="m_unitId" required value="${unit.id}" ${isEdit ? 'readonly class="w-full px-3 py-2 bg-slate-100 border border-slate-200 rounded-xl text-xs font-semibold"' : 'class="w-full px-3 py-2 border border-slate-200 rounded-xl text-xs"'}>
+                                </div>
+                                <div>
+                                    <label class="block text-[11px] font-bold text-slate-600 mb-1">Status</label>
+                                    <select id="m_unitStatus" class="w-full px-3 py-2 border border-slate-200 rounded-xl text-xs">
+                                        <option value="AVAILABLE" ${unit.status === 'AVAILABLE' ? 'selected' : ''}>AVAILABLE</option>
+                                        <option value="IN USE" ${unit.status === 'IN USE' ? 'selected' : ''}>IN USE</option>
+                                        <option value="MAINTENANCE" ${unit.status === 'MAINTENANCE' ? 'selected' : ''}>MAINTENANCE</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div>
+                                <label class="block text-[11px] font-bold text-slate-600 mb-1">Model Name</label>
+                                <input type="text" id="m_unitModel" required value="${unit.model}" class="w-full px-3 py-2 border border-slate-200 rounded-xl text-xs">
+                            </div>
+
+                            <div>
+                                <label class="block text-[11px] font-bold text-slate-600 mb-1">Lab / Station Assignment</label>
+                                <input type="text" id="m_unitLab" required value="${unit.lab}" class="w-full px-3 py-2 border border-slate-200 rounded-xl text-xs">
+                            </div>
+
+                            <div class="grid grid-cols-2 gap-3">
+                                <div>
+                                    <label class="block text-[11px] font-bold text-slate-600 mb-1">CPU</label>
+                                    <input type="text" id="m_unitCpu" value="${unit.cpu}" class="w-full px-3 py-2 border border-slate-200 rounded-xl text-xs">
+                                </div>
+                                <div>
+                                    <label class="block text-[11px] font-bold text-slate-600 mb-1">RAM</label>
+                                    <input type="text" id="m_unitRam" value="${unit.ram}" class="w-full px-3 py-2 border border-slate-200 rounded-xl text-xs">
+                                </div>
+                            </div>
+
+                            <div class="grid grid-cols-2 gap-3">
+                                <div>
+                                    <label class="block text-[11px] font-bold text-slate-600 mb-1">Storage</label>
+                                    <input type="text" id="m_unitStorage" value="${unit.storage}" class="w-full px-3 py-2 border border-slate-200 rounded-xl text-xs">
+                                </div>
+                                <div>
+                                    <label class="block text-[11px] font-bold text-slate-600 mb-1">GPU</label>
+                                    <input type="text" id="m_unitGpu" value="${unit.gpu}" class="w-full px-3 py-2 border border-slate-200 rounded-xl text-xs">
+                                </div>
+                            </div>
+
+                            <div class="flex justify-end gap-2 pt-4">
+                                <button type="button" onclick="closeModal()" class="px-4 py-2 border border-slate-200 rounded-xl text-xs font-semibold">Cancel</button>
+                                <button type="submit" class="px-4 py-2 bg-brand-800 text-white rounded-xl text-xs font-semibold">Save Unit</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            `;
+            document.getElementById('modal-container').innerHTML = modalHtml;
+        }
+
+        function handleSaveUnit(event, existingId) {
+            event.preventDefault();
+            const newUnit = {
+                id: document.getElementById('m_unitId').value.trim(),
+                status: document.getElementById('m_unitStatus').value,
+                model: document.getElementById('m_unitModel').value.trim(),
+                lab: document.getElementById('m_unitLab').value.trim(),
+                cpu: document.getElementById('m_unitCpu').value.trim(),
+                ram: document.getElementById('m_unitRam').value.trim(),
+                storage: document.getElementById('m_unitStorage').value.trim(),
+                gpu: document.getElementById('m_unitGpu').value.trim()
+            };
+
+            if (existingId) {
+                const idx = state.units.findIndex(u => u.id === existingId);
+                if (idx !== -1) state.units[idx] = newUnit;
+                showToast(`Updated workstation ${newUnit.id}`, 'success');
+            } else {
+                state.units.unshift(newUnit);
+                showToast(`Created new workstation ${newUnit.id}`, 'success');
+            }
+
+            saveToStorage();
+            closeModal();
+            render();
+        }
+
+        function deleteUnit(unitId) {
+            if (confirm(`Are you sure you want to delete ${unitId}?`)) {
+                state.units = state.units.filter(u => u.id !== unitId);
+                saveToStorage();
+                showToast(`Deleted unit ${unitId}`, 'danger');
+                render();
+            }
+        }
+
+        function toggleUnitStatus(unitId) {
+            const unit = state.units.find(u => u.id === unitId);
+            if (unit) {
+                if (unit.status === 'AVAILABLE') unit.status = 'IN USE';
+                else if (unit.status === 'IN USE') unit.status = 'MAINTENANCE';
+                else unit.status = 'AVAILABLE';
+
+                saveToStorage();
+                showToast(`Updated ${unitId} to ${unit.status}`, 'info');
+                render();
+            }
+        }
+
+        function openUserModal(userId = null) {
+            const isEdit = !!userId;
+            const user = isEdit ? state.users.find(u => u.id === userId) : { id: `STU-2023-${Math.floor(100+Math.random()*900)}`, name: '', role: 'Student', email: '', status: 'ACTIVE' };
+
+            const modalHtml = `
+                <div class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm">
+                    <div class="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl border border-slate-200">
+                        <div class="flex items-center justify-between border-b border-slate-100 pb-4 mb-4">
+                            <h3 class="text-base font-bold text-slate-800">${isEdit ? 'Edit User Record' : 'Add New System User'}</h3>
+                            <button onclick="closeModal()" class="text-slate-400 hover:text-slate-600"><i class="fas fa-times"></i></button>
+                        </div>
+
+                        <form onsubmit="handleSaveUser(event, '${isEdit ? user.id : ''}')" class="space-y-3">
+                            <div>
+                                <label class="block text-[11px] font-bold text-slate-600 mb-1">User ID</label>
+                                <input type="text" id="m_userId" required value="${user.id}" ${isEdit ? 'readonly class="w-full px-3 py-2 bg-slate-100 border border-slate-200 rounded-xl text-xs font-semibold"' : 'class="w-full px-3 py-2 border border-slate-200 rounded-xl text-xs"'}>
+                            </div>
+
+                            <div>
+                                <label class="block text-[11px] font-bold text-slate-600 mb-1">Full Name</label>
+                                <input type="text" id="m_userName" required value="${user.name}" class="w-full px-3 py-2 border border-slate-200 rounded-xl text-xs">
+                            </div>
+
+                            <div class="grid grid-cols-2 gap-3">
+                                <div>
+                                    <label class="block text-[11px] font-bold text-slate-600 mb-1">Role</label>
+                                    <select id="m_userRole" class="w-full px-3 py-2 border border-slate-200 rounded-xl text-xs">
+                                        <option value="Student" ${user.role === 'Client' ? 'selected' : ''}>Client</option>
+                                        <option value="Faculty" ${user.role === 'VIP' ? 'selected' : ''}>Vip</option>
+                                        <option value="Admin" ${user.role === 'Admin' ? 'selected' : ''}>Admin</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="block text-[11px] font-bold text-slate-600 mb-1">Status</label>
+                                    <select id="m_userStatus" class="w-full px-3 py-2 border border-slate-200 rounded-xl text-xs">
+                                        <option value="ACTIVE" ${user.status === 'ACTIVE' ? 'selected' : ''}>ACTIVE</option>
+                                        <option value="INACTIVE" ${user.status === 'INACTIVE' ? 'selected' : ''}>INACTIVE</option>
+                                        <option value="PENDING" ${user.status === 'PENDING' ? 'selected' : ''}>PENDING</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div>
+                                <label class="block text-[11px] font-bold text-slate-600 mb-1">Email Address</label>
+                                <input type="email" id="m_userEmail" required value="${user.email}" class="w-full px-3 py-2 border border-slate-200 rounded-xl text-xs">
+                            </div>
+
+                            <div class="flex justify-end gap-2 pt-4">
+                                <button type="button" onclick="closeModal()" class="px-4 py-2 border border-slate-200 rounded-xl text-xs font-semibold">Cancel</button>
+                                <button type="submit" class="px-4 py-2 bg-brand-800 text-white rounded-xl text-xs font-semibold">Save User</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            `;
+            document.getElementById('modal-container').innerHTML = modalHtml;
+        }
+
+        function handleSaveUser(event, existingId) {
+            event.preventDefault();
+            const newUser = {
+                id: document.getElementById('m_userId').value.trim(),
+                name: document.getElementById('m_userName').value.trim(),
+                role: document.getElementById('m_userRole').value,
+                status: document.getElementById('m_userStatus').value,
+                email: document.getElementById('m_userEmail').value.trim(),
+                lastLogin: 'Just now'
+            };
+
+            if (existingId) {
+                const idx = state.users.findIndex(u => u.id === existingId);
+                if (idx !== -1) state.users[idx] = newUser;
+                showToast(`Updated user ${newUser.name}`, 'success');
+            } else {
+                state.users.unshift(newUser);
+                showToast(`Added new user ${newUser.name}`, 'success');
+            }
+
+            saveToStorage();
+            closeModal();
+            render();
+        }
+
+        function deleteUser(userId) {
+            if (confirm(`Are you sure you want to delete user ${userId}?`)) {
+                state.users = state.users.filter(u => u.id !== userId);
+                saveToStorage();
+                showToast(`Deleted user ${userId}`, 'danger');
+                render();
+            }
+        }
+
+        function openReportModal(reportId = null) {
+            const isEdit = !!reportId;
+            const report = isEdit ? state.reports.find(r => r.id === reportId) : { id: `REP-${Math.floor(100+Math.random()*900)}`, pcId: 'PC-001', lab: 'Lab A, Station 1', problem: '', status: 'PENDING', date: 'Oct 06, 2026', technician: 'Unassigned' };
+
+            const modalHtml = `
+                <div class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm">
+                    <div class="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl border border-slate-200">
+                        <div class="flex items-center justify-between border-b border-slate-100 pb-4 mb-4">
+                            <h3 class="text-base font-bold text-slate-800">${isEdit ? 'Edit Maintenance Report' : 'File Maintenance Report'}</h3>
+                            <button onclick="closeModal()" class="text-slate-400 hover:text-slate-600"><i class="fas fa-times"></i></button>
+                        </div>
+
+                        <form onsubmit="handleSaveReport(event, '${isEdit ? report.id : ''}')" class="space-y-3">
+                            <div class="grid grid-cols-2 gap-3">
+                                <div>
+                                    <label class="block text-[11px] font-bold text-slate-600 mb-1">Target PC ID</label>
+                                    <input type="text" id="m_repPcId" required value="${report.pcId}" class="w-full px-3 py-2 border border-slate-200 rounded-xl text-xs">
+                                </div>
+                                <div>
+                                    <label class="block text-[11px] font-bold text-slate-600 mb-1">Status</label>
+                                    <select id="m_repStatus" class="w-full px-3 py-2 border border-slate-200 rounded-xl text-xs">
+                                        <option value="PENDING" ${report.status === 'PENDING' ? 'selected' : ''}>PENDING</option>
+                                        <option value="IN PROGRESS" ${report.status === 'IN PROGRESS' ? 'selected' : ''}>IN PROGRESS</option>
+                                        <option value="COMPLETED" ${report.status === 'COMPLETED' ? 'selected' : ''}>COMPLETED</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div>
+                                <label class="block text-[11px] font-bold text-slate-600 mb-1">Problem Description</label>
+                                <textarea id="m_repProblem" required class="w-full px-3 py-2 border border-slate-200 rounded-xl text-xs h-20">${report.problem}</textarea>
+                            </div>
+
+                            <div>
+                                <label class="block text-[11px] font-bold text-slate-600 mb-1">Assigned Technician</label>
+                                <input type="text" id="m_repTech" value="${report.technician}" class="w-full px-3 py-2 border border-slate-200 rounded-xl text-xs">
+                            </div>
+
+                            <div class="flex justify-end gap-2 pt-4">
+                                <button type="button" onclick="closeModal()" class="px-4 py-2 border border-slate-200 rounded-xl text-xs font-semibold">Cancel</button>
+                                <button type="submit" class="px-4 py-2 bg-brand-800 text-white rounded-xl text-xs font-semibold">Save Report</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            `;
+            document.getElementById('modal-container').innerHTML = modalHtml;
+        }
+
+        function handleSaveReport(event, existingId) {
+            event.preventDefault();
+            const newReport = {
+                id: existingId || `REP-${Math.floor(100+Math.random()*900)}`,
+                pcId: document.getElementById('m_repPcId').value.trim(),
+                lab: 'Lab A, Station',
+                problem: document.getElementById('m_repProblem').value.trim(),
+                status: document.getElementById('m_repStatus').value,
+                date: 'Oct 06, 2026',
+                technician: document.getElementById('m_repTech').value.trim() || 'Unassigned'
+            };
+
+            if (existingId) {
+                const idx = state.reports.findIndex(r => r.id === existingId);
+                if (idx !== -1) state.reports[idx] = newReport;
+                showToast(`Updated report ${newReport.id}`, 'success');
+            } else {
+                state.reports.unshift(newReport);
+                showToast(`Submitted report ${newReport.id}`, 'success');
+            }
+
+            saveToStorage();
+            closeModal();
+            render();
+        }
+
+        function deleteReport(reportId) {
+            if (confirm(`Are you sure you want to delete report ${reportId}?`)) {
+                state.reports = state.reports.filter(r => r.id !== reportId);
+                saveToStorage();
+                showToast(`Deleted report ${reportId}`, 'danger');
+                render();
+            }
+        }
+
+        function closeModal() {
+            document.getElementById('modal-container').innerHTML = '';
+        }
+
+        function resetDataToDefault() {
+            if (confirm('Reset system data back to initial Figma mockup defaults?')) {
+                localStorage.removeItem('pcc_lab_system_data');
+                state.units = [ ...INITIAL_DATA.units ];
+                state.users = [ ...INITIAL_DATA.users ];
+                state.reports = [ ...INITIAL_DATA.reports ];
+                showToast('System reset to default state', 'info');
+                render();
+            }
+        }
+
+        function navigateScreen(screenName) {
+            state.currentScreen = screenName;
+            render();
+        }
+
+        function switchTab(tabId) {
+            state.activeTab = tabId;
+            render();
+        }
+
+        function handleLogin(e) {
+            e.preventDefault();
+            state.userAuth.isLoggedIn = true;
+            state.currentScreen = 'app';
+            showToast('Signed in successfully', 'success');
+            render();
+        }
+
+        function handleResetPassword(e) {
+            e.preventDefault();
+            showToast('Reset link sent to administrator email', 'info');
+            state.currentScreen = 'login';
+            render();
+        }
+
+        function handleLogout() {
+            state.userAuth.isLoggedIn = false;
+            state.currentScreen = 'welcome';
+            showToast('Logged out of workspace', 'info');
+            render();
+        }
+
+        function handleSearch(val) {
+            state.searchTerm = val;
+            render();
+        }
+
+        function togglePasswordVisibility() {
+            const input = document.getElementById('loginPassword');
+            const icon = document.getElementById('passwordToggleIcon');
+            if (input.type === 'password') {
+                input.type = 'text';
+                icon.className = 'fas fa-eye-slash';
+            } else {
+                input.type = 'password';
+                icon.className = 'fas fa-eye';
+            }
+        }
+
+        function attachMainEvents() {}
+
+        // App Initialization
+        window.onload = function() {
+            loadFromStorage();
+            render();
+        };
+    </script>
+</body>
+</html>
